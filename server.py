@@ -15,7 +15,7 @@ logger = logging.getLogger("ppt-expert-server")
 mcp = FastMCP("product-pilot-expert")
 
 # 统一的加密 PDF 打开密码
-DECRYPT_PASSWORD = "ys911..ob"
+DECRYPT_PASSWORD = "AI-123"
 
 @mcp.tool()
 def get_agents_rules() -> str:
