@@ -26,7 +26,7 @@ PPT Expert 专门用于将产品方案、研究报告或规划思路，转化为
 3. **内容拆分与生成**：确保一页表达一个核心观点，提炼 L1–L6 层级文案。
 4. **双轨输出生成**：
    - **大纲轨道**：按照输出格式规范，首先输出符合 L1–L6 层级的幻灯片 Markdown 逻辑结构描述。
-   - **HTML 网页幻灯片轨道**：若用户要求进行高还原展示或网页端演示，或者当需要保留复杂的视觉样式（如磨砂玻璃卡片、定制渐变、响应式网格布局、内置 SVG/Mermaid 原型）时，**必须同时生成并输出一个完整的 HTML 网页幻灯片文件代码**。此代码必须继承 `templates/html-presentation/index.html` 提供的单文件自包含（Single-file Self-contained）框架，包括 CSS 变量声明、16:9 自适应缩放 JS 控制、键盘左右翻页监听，并将当前 PPT 的全部内容填充到对应的 `.slide` 节点中。
+   - **HTML 网页幻灯片轨道**：若用户要求进行高还原展示或网页端演示，**必须生成完整的 HTML 单文件**。默认使用 **PDF 纵向滚动模式（Scroll Mode）**，即所有幻灯片垂直堆叠、页面可向下滚动浏览，无需键盘切换。此模式能彻底规避 Flex 布局溢出导致的空白页 bug，是交付物的默认标准。仅当用户明确要求"全屏演示/Presentation Mode"时，才切换为键盘翻页模式。
 5. **视觉元素匹配**：每页 PPT **必须至少包含一种有效的视觉内容**（真实截图、示意原型、流程图、架构图、对比图、数据图表或场景图片）。**严禁纯文字页**。若缺少实际素材，必须生成清晰标注的、包含原型线框或详细占位说明的可替换示意内容。
 6. **数据与信息校验**：**禁止自行生成**任何技术代次、性能指标、市场排名、算法能力、刷新率范围或竞品结论。不确定内容必须标为“待验证”，并列出补充证据清单。
 7. **添加演说备注**：为每页编写 30–60 秒的口语化演说词。
@@ -68,6 +68,63 @@ PPT Expert 专门用于将产品方案、研究报告或规划思路，转化为
 * **DOM 结构扁平化限制 (Don'ts)**：在普通内容页（`.slide` 容器）内部，**严禁**引入 `<div class="slide-body">`、`<div class="wrapper">` 等把除 Header/Footer 外的多个内容大块打包在一起的嵌套层。这会导致 Flexbox 的垂直 `space-between` 空间分配机制完全失效，产生内容整体下移和上部大片空白的排版故障。页面的所有核心逻辑大块（如 `slide-header`、`section-banner`、`grid-x-col`、`slide-footer`）**必须直接作为 `.slide` 容器的直系子元素 (Direct Children)**。
 * **容器高度与拉伸规范 (Do's)**：在直系子元素（如卡片组 `.grid-4-col`）内部放置子卡片时，子卡片的高度建议设置为 `height: 100%` 或 `flex-grow: 1`。**严禁在直系子元素上使用行内样式 `style="flex: 0 0 auto;"` 或者是 `style="flex-grow: 0;"`**，这会强行覆盖 CSS 原本的自适应拉伸机制，导致在 space-between 布局下页面顶部露出大范围白色空隙。严禁在直系子元素上随意使用大数值的 `margin-top`。限制单页中所有直系子元素的高度（包括 margins 和 paddings）累加**不得超过 900px**，以确保在 16:9 画布内内容绝不溢出裁剪。
 * **自动化配图规范 (Automatic Image Generation & Embedding)**：严禁纯文字页或使用文字/灰色块占位。在渲染网页幻灯片时，必须调用内置的 `generate_image` 工具在本地 `assets/images/` 目录下生成匹配的高清配图并写入 `<img>` 标签，或使用合法的 Unsplash 相对链接。图片外层必须使用容器包裹，并声明 `width: 100%; height: 100%; object-fit: cover;` 以防止图片撑垮 Grid 网格布局。
+
+### 7.2 PDF 滚动模式 CSS 骨架 (Scroll Mode Template — 必须遵守)
+
+**生成 HTML 文件时，必须使用以下 CSS 骨架作为布局基础，禁止使用键盘翻页模式的 `position: absolute / opacity: 0` 方案：**
+
+```css
+body {
+  background-color: #D1D5DB;
+  overflow-y: auto;
+  width: 100%;
+  margin: 0;
+  padding: 24px 0;
+}
+#deck-container {
+  width: 1920px;
+  margin: 0 auto;
+  background: transparent;
+}
+#deck {
+  width: 1920px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+}
+.slide {
+  position: relative;       /* ✅ 静态定位，非 absolute */
+  width: 1920px;
+  height: 1080px;
+  flex-shrink: 0;
+  opacity: 1;               /* ✅ 全部可见，无需 .active 切换 */
+  visibility: visible;
+  padding: 50px 80px 30px 80px;
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;         /* ✅ 固定高度 + overflow:hidden，彻底杜绝空白页 */
+}
+.slide-header { flex: 0 0 auto; }
+.slide-footer { flex: 0 0 auto; margin-top: auto; }
+.grid-2-col, .grid-3-col, .grid-4-col { flex-grow: 1; }
+```
+
+**配套 JS（仅做视口自适应缩放，无键盘监听）：**
+```javascript
+function scaleToViewport() {
+  const scale = Math.min(1, window.innerWidth / 1920);
+  const container = document.getElementById('deck-container');
+  container.style.transform = `scale(${scale})`;
+  container.style.transformOrigin = 'top center';
+}
+window.addEventListener('resize', scaleToViewport);
+scaleToViewport();
+```
+
+
 
 
 
