@@ -51,7 +51,7 @@ def get_agents_rules() -> str:
   - **禁止引入全局包裹器**：在普通内容页（.slide 容器）内部，**严禁**引入 <div class="slide-body">、<div class="wrapper"> 等嵌套层。这会导致 Flexbox 的垂直 space-between 空间分配机制完全失效，产生内容整体下移和上部大片空白的排版故障。
   - **组件平铺原则**：页面的所有核心逻辑大块（如 slide-header, section-banner, grid-x-col, slide-footer）**必须直接作为 .slide 容器的直系子元素 (Direct Children)**。
 * **4.2 容器高度与拉伸规范 (Do's)**：
-  - **内部高度自适应**：在直系子元素（如卡片组 .grid-4-col）内部放置子卡片时，子卡片的高度建议设置为 height: 100% 或 flex-grow: 1，以保证垂直方向自动拉伸整齐。
+  - **内部高度自适应**：在直系子元素（如卡片组 .grid-4-col）内部放置子卡片时，子卡片的高度建议设置为 height: 100% 或 flex-grow: 1，以保证垂直方向自动拉伸整齐。**严禁在直系子元素（如卡片组）上使用行内样式 style="flex: 0 0 auto;" 或者是 style="flex-grow: 0;"**，这会覆盖原本 CSS 的拉伸属性从而导致排版顶部出现大范围空白。
   - **间距留白限制**：严禁在直系子元素上随意使用大数值的 margin-top、padding-top。所有的垂直分布和留白应完全交由父级容器的 justify-content: space-between 自动计算分发。
   - **900px 垂直高度防溢出条件**：单页中所有直系子元素的高度（包括 margins 和 paddings）累加**不得超过 900px**。这能确保在 16:9 画布（高 1080px）内即使在不同分辨率下，底部的页脚和核心内容也绝不会因高度溢出而被截断。
 
