@@ -55,8 +55,16 @@ description: 演示文稿生成与风格校准专家 (Generate slides based on l
 * **数据来源 (L6)**: [注明出处与版本]
 ```
 
-## 4. HTML 网页幻灯片开发布局规范
-在生成高还原度的 HTML 幻灯片代码时，必须遵守以下 DOM 结构规范以保证 flex 布局不失效：
-* **禁止引入嵌套包裹层**：幻灯片内容页的所有核心大块（如 `slide-header`、`section-banner`、`grid-x-col`、`slide-footer`）**必须直接作为 `.slide` 容器的直系子元素**。
-* **严禁**使用类似于 `<div class="slide-body">` 等中转嵌套包裹层。多余的包裹层会导致 `.slide` 上的 `justify-content: space-between` 对齐机制失效，从而引发内容整体严重下移和上部大片空白的排版故障。
+## 4. HTML 网页幻灯片布局限制与自适应规范 (HTML Slides Layout Guidelines)
+为了确保幻灯片内容页的 Flex 垂直分布对齐（`justify-content: space-between`）与自适应缩放能够完美工作，AI 助手在生成 HTML 代码时必须严格遵守以下布局条件：
+
+* **4.1 扁平化 DOM 结构限制 (Don'ts)**：
+  - **禁止引入全局包裹器**：在普通内容页（`.slide` 容器）内部，**严禁**引入 `<div class="slide-body">`、`<div class="wrapper">` 等把除 Header/Footer 外的多个内容大块打包在一起的嵌套层。这会导致 Flexbox 的垂直 `space-between` 空间分配机制完全失效。
+  - **组件平铺原则**：页面的所有核心逻辑大块（如 `slide-header`、`section-banner`、`grid-x-col`、`slide-footer`）**必须直接作为 `.slide` 容器的直系子元素 (Direct Children)**。
+
+* **4.2 容器高度与拉伸规范 (Do's)**：
+  - **内部高度自适应**：在直系子元素（如卡片组 `.grid-4-col`）内部放置子卡片时，子卡片的高度建议设置为 `height: 100%` 或 `flex-grow: 1`，以保证垂直方向自动拉伸整齐。
+  - **间距留白限制**：严禁在直系子元素上随意使用大数值的 `margin-top`、`padding-top` 或绝对定位把内容往下推。所有的垂直分布和留白应完全交由父级容器的 `justify-content: space-between` 自动计算分发。
+  - **900px 垂直高度防溢出条件**：单页中所有直系子元素的高度（包括 margins 和 paddings）累加**不得超过 900px**。这能确保在 16:9 画布（高 1080px）内即使在不同分辨率下，底部的页脚和核心内容也绝不会因高度溢出而被截断。
+
 
