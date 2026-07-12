@@ -5,7 +5,7 @@ mkdir -p .agents/skills/product-mcp
 
 # 2. 从 GitHub 下载 SKILL.md 技能文件
 echo "正在从 GitHub 下载 Product-MCP 技能文件..."
-curl -fsSL "https://raw.githubusercontent.com/yangshuai990529/product-pilot-mcp/main/SKILL.md?t=\$(date +%s)" -o .agents/skills/product-mcp/SKILL.md
+curl -fsSL "https://raw.githubusercontent.com/yangshuai990529/product-pilot-mcp/main/SKILL.md?v=2026" -o .agents/skills/product-mcp/SKILL.md
 
 # 3. 创建本地 PDF 参考文件夹以方便用户放入文件
 mkdir -p my_pdfs
