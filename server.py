@@ -1,3 +1,47 @@
+"""
+ProductPilot MCP Server
+启动前自动检测并安装所有缺失的 Python 依赖，确保在任何环境都能直接运行。
+"""
+import sys
+import subprocess
+
+# ── 自动依赖安装 Bootstrap ────────────────────────────────────────────────────
+# 格式：(import名, pip包名, 最低版本要求)
+_REQUIRED = [
+    ("mcp",        "mcp[cli]>=1.0.0"),
+    ("pypdf",      "pypdf>=4.0.0"),
+    ("uvicorn",    "uvicorn>=0.25.0"),
+    ("fastapi",    "fastapi>=0.109.0"),
+    ("multipart",  "python-multipart>=0.0.9"),
+]
+
+def _auto_install_missing():
+    missing = []
+    for import_name, pip_spec in _REQUIRED:
+        try:
+            __import__(import_name)
+        except ImportError:
+            missing.append(pip_spec)
+
+    if missing:
+        print(f"[ProductPilot] ⚠️  检测到缺失依赖，正在自动安装: {missing}", flush=True)
+        try:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "--quiet", "--upgrade"] + missing,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+            )
+            print(f"[ProductPilot] ✅ 依赖安装完成，正在重新启动服务...", flush=True)
+            # 重新启动当前脚本以确保新包生效
+            import os
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        except subprocess.CalledProcessError as e:
+            print(f"[ProductPilot] ❌ 自动安装失败，请手动运行: pip install {' '.join(missing)}", flush=True)
+            sys.exit(1)
+
+_auto_install_missing()
+# ─────────────────────────────────────────────────────────────────────────────
+
 import os
 import io
 import glob
@@ -10,6 +54,7 @@ from pypdf import PdfReader
 # 配置基本的日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ppt-expert-server")
+
 
 # 初始化 FastMCP
 mcp = FastMCP("product-pilot-expert")

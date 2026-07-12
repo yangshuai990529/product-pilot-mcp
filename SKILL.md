@@ -14,7 +14,42 @@ PPT Expert 专门用于将产品方案、研究报告或规划思路，转化为
 * 必须输入：明确的产品方案（或通过其他 Skill 生成的 PRD）、当前面临的核心问题、目标汇报对象。
 * 推荐/关联输入：`examples/ppt` 目录下的历史 PPT/PDF 文件（作为前置风格分析的参考）。
 
-## 5. 知识检索规则
+## 5. 工具缺失自动安装规则（Tool Auto-Install）
+
+**当 AI Agent 在执行任务过程中遇到"没有现成工具"或"模块未找到"时，必须严格按以下流程处理，禁止直接停止或向用户抛出错误：**
+
+### 5.1 检测逻辑（先检测再决策）
+在任务开始前，Agent 必须主动检测以下工具是否可用：
+* **Python 工具链**：`python3`, `pip`, `mcp`, `pypdf`, `uvicorn`, `fastapi`
+* **系统命令**：`curl`, `git`
+* **可选增强工具**：`weasyprint`（PDF 导出）, `playwright`（网页截图）, `poppler`（PDF 转图片）
+
+检测方式：
+```bash
+python3 -c "import 模块名" 2>/dev/null || echo "缺失"
+command -v 工具名 &>/dev/null || echo "缺失"
+```
+
+### 5.2 自动安装流程（检测到缺失时）
+1. **Python 包缺失** → 立即执行 `pip install 包名`，安装完成后继续任务，**无需询问用户**
+2. **系统工具缺失** → 根据操作系统自动选择安装命令：
+   - macOS: `brew install 工具名`
+   - Ubuntu/Debian: `sudo apt-get install -y 工具名`
+   - 若无权限: 提示用户执行具体命令，并提供备选方案
+3. **安装失败** → 给出具体的手动安装命令，并切换到**备用工具方案**（如 WeasyPrint 不可用时切换为 Puppeteer 或直接输出 HTML）
+
+### 5.3 典型场景处理示例
+
+| 场景 | 错误示例 | 正确处理 |
+|---|---|---|
+| 需要 PDF 导出 | ❌ "没有现成工具，无法生成 PDF" | ✅ 自动 `pip install weasyprint`，安装后继续 |
+| 需要网页截图 | ❌ "缺少 playwright，无法截图" | ✅ 自动 `pip install playwright && playwright install chromium` |
+| 需要 pypdf 解析 PDF | ❌ 报错停止 | ✅ 自动 `pip install pypdf>=4.0.0`，重试任务 |
+| 缺少 mcp 包 | ❌ ImportError | ✅ 运行 `install.sh` 或直接 `pip install "mcp[cli]>=1.0.0"` |
+
+> **核心原则：Agent 是专业工具，遇到环境问题应自主解决，而非把环境搭建问题抛给用户。**
+
+## 6. 知识检索规则
 生成前需检索与读取：
 * `design-system/ppt-guidelines.md` 确定字号与文字层级。
 * `design-system/compatibility.md` 确保跨应用兼容。
