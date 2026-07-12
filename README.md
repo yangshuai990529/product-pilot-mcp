@@ -1,75 +1,55 @@
-# ProductPilot - 高级内容排版与 PDF 风格分析中转站 MCP 服务
+# ProductPilot - 高还原排版与 PDF 风格分析中转站 (MCP 与本地 Skill)
 
-这是一个基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 协议构建的独立微服务，旨在解决以下三大痛点：
-1. **防范机密 PDF 模版泄露**：敏感的 PPT/PDF 文件在本地是加密的（打开密码 `ys911..ob`）。本地的 AI 助手通过将加密 PDF 作为 Base64 发送给此云端服务，由云端解密并分析风格返回，实现“敏感文件不落地”。
-2. **规避网页幻灯片排版错位（关键修复）**：内置了针对大模型容易多写 `.slide-body` 导致 Flexbox 空间分配机制失效、内容下移溢出等问题的优化排版限制规范。
-3. **内置自动化配图与生图条件**：指导大模型在渲染网页幻灯片时主动调用本地/云端生图接口，输出完整的本地图片路径，拒用空白占位符。
+这是一个专为 AI 助手（如 Codex、WorkBuddy、Cursor）定制的专家工具配置库，提供以下核心价值：
+1. **防止机密 PDF 参考模版泄露**：云端中转自动解密（内置密码 `ys911..ob`）并提取版式规律，敏感数据不落地。
+2. **防范内容页排版错位（核心修复）**：硬性限制大模型使用多余的 `slide-body` 嵌套，强制采用扁平 DOM，且限制单页内容高度不超过 900px，保证 space-between 完美对齐。
+3. **自动化配图与自主生图**：AI 会在生成 HTML 时，调用 `generate_image` 产生配套图片并填入相对路径引用。
 
----
-
-## 🛠️ 其他 AI 助手 / 客户端配置步骤 (一键集成)
-
-别人要使用您的这个 MCP 工具，只需要在他们的 IDE（如 Codex、WorkBuddy 或 Cursor）的全局 MCP 配置文件中加入此服务的链接。
-
-### 1. 本地 Stdio 运行模式配置 (直接从 GitHub 远程运行)
-如果不需要部署云端，客户端直接通过命令行自动从您的 GitHub 仓库拉取并启动：
-
-#### A. Node.js (npx) 启动配置：
-若用 Node 运行，在 `settings.json` 的 `mcpServers` 对象中添加：
-```json
-"mcpServers": {
-  "product-pilot-expert": {
-    "command": "npx",
-    "args": [
-      "-y",
-      "git+https://github.com/yangshuai990529/product-pilot-mcp.git"
-    ]
-  }
-}
-```
-
-#### B. Python (uvx) 启动配置（极速拉取运行）：
-```json
-"mcpServers": {
-  "product-pilot-expert": {
-    "command": "uvx",
-    "args": [
-      "--from",
-      "git+https://github.com/yangshuai990529/product-pilot-mcp.git",
-      "mcp"
-    ]
-  }
-}
-```
+本仓库支持**两种接入使用模式**，请根据需要选择：
 
 ---
 
-### 2. 远程 SSE 运行模式配置 (一键部署至 Render/Railway)
-如果您不希望把代码包（包含 PDF 加密算法）下载到别人的本地缓存中，推荐部署在 Render 平台上：
-1. 在 [Render.com](https://render.com/) 新建一个 **Web Service**，并绑定您的 GitHub 仓库。
-2. 填写配置：
+## 🚀 方式一：小白用户一键安装本地技能 (Skill 模式 - 强烈推荐)
+
+不需要任何复杂的云端部署，直接对大模型发指令即可一键下载并配置到本地项目中！
+
+### 1. 一键安装
+在您打开的 IDE 聊天框中，**直接对 AI 助手说以下这句话**：
+
+> 帮我运行这行命令以安装 /product-mcp 技能：
+> `curl -fsSL https://raw.githubusercontent.com/yangshuai990529/product-pilot-mcp/main/install.sh | bash`
+
+AI 助手会自动在本地终端执行脚本。脚本会自动检测，如果本地已经存在此配置则不会重复覆盖，若无则自动在当前项目根目录下生成 `.agents/skills/product-mcp/SKILL.md` 配置文件。
+
+### 2. 使用方法
+* 第一步：将您要模仿风格的任意 PPT/PDF 参考模版文件，拖入项目根目录下的 **`my_pdfs/`** 文件夹中。
+* 第二步：在聊天框中输入 **`/product-mcp`** 唤醒此技能。例如：
+  > `/product-mcp` 帮我读取本地 `my_pdfs/` 下的 PDF 模版，并把我当前的这个 PRD 转换成大纲。
+
+---
+
+## ⚙️ 方式二：高阶云端 MCP 模式 (Model Context Protocol)
+
+适合需要把文件锁在云端服务器中、免本地任何文件拷贝的高级场景：
+
+### 1. 部署到云端
+1. 注册并登录免费的云托管平台 [Render](https://render.com/)。
+2. 新建 **Web Service**，并关联本 GitHub 仓库。
+3. 参数配置：
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `python server.py`
-3. 部署成功后，得到一个公网链接，如 `https://product-pilot-mcp-xxxx.onrender.com`。
-4. 别人在其本地 IDE 的 `settings.json` 中配置您的公网 SSE 入口即可：
-   ```json
-   "mcpServers": {
-     "product-pilot-expert": {
-       "url": "https://您的Render网址链接.onrender.com/sse"
-     }
-   }
-   ```
+4. 部署成功后，系统会提供一个公网 HTTPS 链接（例如：`https://您的Render网址.onrender.com`）。
 
----
+### 2. 在 IDE 客户端配置接入
+打开 IDE 的 MCP 配置文件（如 `settings.json`），在 `mcpServers` 里配置该公网链接：
 
-## 📄 项目级 AI 助手规则配置 (AGENTS.md)
-
-在新项目的根目录下，将以下规则追加到 `AGENTS.md` 的末尾，使 AI 助手懂得在遇到本地加密 PDF 时自动运行 Python 脚本生成 Base64 流，并调用此 MCP 进行前置分析：
-
-```markdown
-## 关于加密 PDF 参考模版的风格分析规则
-
-* 当您（AI 助手）需要对本地 `examples/ppt/` 下的加密 PDF 进行风格前置分析时，必须使用本地运行脚本，在后台执行一段 Python 将该加密文件转化为 Base64 编码字符串。
-* 然后，调用 MCP 提供的 `extract_and_analyze_pdf` 工具，将 Base64 发送到云端。
-* 云端会自动使用密码 `ys911..ob` 进行解密，并为您返回风格特征分析报告。
+```json
+{
+  "mcpServers": {
+    "product-pilot-expert": {
+      "url": "https://您的Render网址链接.onrender.com/sse"
+    }
+  }
+}
 ```
+*配置完成后，您可在新项目的 `AGENTS.md` 规则文档中指导本地 AI 在遇到加密 PDF 时自动 Base64 编码并调用云端 MCP 工具进行解密特征提取。*
