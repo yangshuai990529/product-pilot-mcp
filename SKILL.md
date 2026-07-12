@@ -54,3 +54,9 @@ description: 演示文稿生成与风格校准专家 (Generate slides based on l
 * **演说备注 (Speaker Notes)**: [30–60 秒的口语化演说词]
 * **数据来源 (L6)**: [注明出处与版本]
 ```
+
+## 4. HTML 网页幻灯片开发布局规范
+在生成高还原度的 HTML 幻灯片代码时，必须遵守以下 DOM 结构规范以保证 flex 布局不失效：
+* **禁止引入嵌套包裹层**：幻灯片内容页的所有核心大块（如 `slide-header`、`section-banner`、`grid-x-col`、`slide-footer`）**必须直接作为 `.slide` 容器的直系子元素**。
+* **严禁**使用类似于 `<div class="slide-body">` 等中转嵌套包裹层。多余的包裹层会导致 `.slide` 上的 `justify-content: space-between` 对齐机制失效，从而引发内容整体严重下移和上部大片空白的排版故障。
+
